@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "build/app",
     "target": "es5",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -8,7 +9,10 @@
     "experimentalDecorators": true,
     "removeComments": false,
     "noImplicitAny": true,
-    "suppressImplicitAnyIndexErrors": true
+    "suppressImplicitAnyIndexErrors": true,
+    "types": [
+      "hammerjs"
+    ]
   },
   "exclude": [
     "gulpfile.ts",

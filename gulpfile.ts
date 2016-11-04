@@ -4,8 +4,12 @@ const gulp = require("gulp");
 const del = require("del");
 const tsc = require("gulp-typescript");
 const sourcemaps = require('gulp-sourcemaps');
-const tsProject = tsc.createProject("tsconfig.json");
+const tsProject = tsc.createProject('tsconfig.json', {
+    typescript: require('typescript')
+});
 const tslint = require('gulp-tslint');
+const sass = require('gulp-sass');
+const concat = require('gulp-concat');
 
 /**
  * Remove build directory.
@@ -18,7 +22,7 @@ gulp.task('clean', (cb: any) => {
  * Lint all custom TypeScript files.
  */
 gulp.task('tslint', () => {
-    return gulp.src("app/**/*.ts")
+    return gulp.src("src/**/*.ts")
         .pipe(tslint({
             formatter: 'prose'
         }))
@@ -29,11 +33,11 @@ gulp.task('tslint', () => {
  * Compile TypeScript sources and create sourcemaps in build directory.
  */
 gulp.task("compile", ["tslint"], () => {
-    let tsResult = gulp.src("app/**/*.ts")
+    let tsResult = gulp.src(['src/**/*.ts', 'typings/**/*.d.ts'])
         .pipe(sourcemaps.init())
         .pipe(tsc(tsProject));
     return tsResult.js
-        .pipe(sourcemaps.write(".", {sourceRoot: '/app'}))
+        .pipe(sourcemaps.write(".", {sourceRoot: '/src'}))
         .pipe(gulp.dest("build"));
 });
 
@@ -41,7 +45,7 @@ gulp.task("compile", ["tslint"], () => {
  * Copy all resources that are not TypeScript files into build directory.
  */
 gulp.task("resources", () => {
-    return gulp.src(["app/**/*", "!**/*.ts"])
+    return gulp.src(["src/**/*", "!**/*.ts"])
         .pipe(gulp.dest("build"));
 });
 
@@ -51,10 +55,13 @@ gulp.task("resources", () => {
 gulp.task("libs", () => {
     return gulp.src([
             'core-js/client/shim.min.js',
+            'core-js/client/shim.min.js.map',
             'systemjs/dist/system-polyfills.js',
             'systemjs/dist/system.src.js',
             'reflect-metadata/Reflect.js',
-            'rxjs/**',
+            'reflect-metadata/Reflect.js.map',
+            'rxjs/**/*.js',
+            'rxjs/**/*.map',
             'zone.js/dist/**',
             '@angular/**'
         ], {cwd: "node_modules/**"}) /* Glob required here. */
@@ -62,20 +69,34 @@ gulp.task("libs", () => {
 });
 
 /**
+ * Compile SASS
+ */
+
+gulp.task('sass', function () {
+    return gulp.src('sass/main.scss')
+        .pipe(sass().on('error', sass.logError))
+        // .pipe(concat('style.css'))
+        .pipe(gulp.dest('src/style'));
+});
+
+/**
  * Watch for changes in TypeScript, HTML and CSS files.
  */
 gulp.task('watch', function () {
-    gulp.watch(["app/**/*.ts"], ['compile']).on('change', function (e : any) {
+    gulp.watch(["src/**/*.ts"], ['compile']).on('change', function (e: any) {
         console.log('TypeScript file ' + e.path + ' has been changed. Compiling.');
     });
-    gulp.watch(["app/**/*.html", "src/**/*.css"], ['resources']).on('change', function (e : any) {
+    gulp.watch(["src/**/*.html", "src/**/*.css"], ['resources']).on('change', function (e: any) {
         console.log('Resource file ' + e.path + ' has been changed. Updating.');
+    });
+    gulp.watch(["sass/**/*.scss"], ['sass']).on('change', function (e: any) {
+        console.log('SASS file ' + e.path + ' has been changed. Compiling.');
     });
 });
 
 /**
  * Build the project.
  */
-gulp.task("build", ['compile', 'resources', 'libs'], () => {
+gulp.task("build", ['compile', 'sass', 'resources', 'libs'], () => {
     console.log("Building the project ...");
 });
