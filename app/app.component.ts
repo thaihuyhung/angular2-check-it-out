@@ -5,4 +5,5 @@ import {Component} from '@angular/core';
     template: `Hello Angular 2`
 })
 export class AppComponent {
+
 }
